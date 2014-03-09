@@ -1,2 +1,2 @@
-bank_model
+OOP modeling of bank
 ==========
