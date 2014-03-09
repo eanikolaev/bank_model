@@ -1,3 +1,9 @@
 from bankmodel import BankModel
+from interface import drawAll
 
-bm = BankModel()
+
+if __name__ == '__main__':
+    bm = BankModel()
+    (root, buttons, labels, canvas, slider) = drawAll()
+    root.mainloop()
+
