@@ -1,5 +1,5 @@
 from bankmodel import BankModel
-from interface import MainWindow
+from windows import MainWindow
 
 
 if __name__ == '__main__':

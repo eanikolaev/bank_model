@@ -54,5 +54,5 @@ class BankModel(Model):
 
 
     def getDefaultFreeDay(self):
-        return { 'work': False }
+        return { 'work': False, 'workRange': (9, 18), 'dinner': True}
 

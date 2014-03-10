@@ -42,7 +42,7 @@ class Model(object):
         } [name.lower()]
 
 
-    def getDayName(self):
+    def getDayName(self, num):
         return {
             0: 'monday',
             1: 'tuesday',
@@ -51,4 +51,4 @@ class Model(object):
             4: 'friday',
             5: 'saturday',
             6: 'sunday'
-        } [self.getDayOfWeek()]
+        } [num]

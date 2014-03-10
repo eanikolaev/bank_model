@@ -20,10 +20,10 @@ class MainWindow(object):
         self.buttons = {
             'start': Button(self.root, text = 'Start'),
             'pause': Button(self.root, text = 'Pause', state=DISABLED),
-            'parameters': Button(self.root, text='Parameters', command=self.popup),
+            'parameters': Button(self.root, text='Parameters', command=self.popupParameters),
             'exit': Button(self.root, text = 'Exit', command=self.root.destroy),
             'skipday': Button(self.root, text = 'Skip day'),
-            'schedule': Button(self.root, text = 'Schedule')
+            'schedule': Button(self.root, text = 'Schedule', command=self.popupSchedule)
         }
 
         self.buttons['schedule'].grid(row=1, column=1)
@@ -56,9 +56,14 @@ class MainWindow(object):
         self.slider.grid(row=3, column=5)
 
 
-    def popup(self):
-        self.w = ParametersWindow(self.root, self.bm)
-        self.root.wait_window(self.w.top)
+    def popupParameters(self):
+        self.pw = ParametersWindow(self.root, self.bm)
+        self.root.wait_window(self.pw.top)
+
+
+    def popupSchedule(self):
+        self.sw = ScheduleWindow(self.root, self.bm)
+        self.root.wait_window(self.sw.top)
 
 
 class ParametersWindow(object):
@@ -145,5 +150,88 @@ class ParametersWindow(object):
         except ValueError:
             tkMessageBox.showwarning("Error", "Invalid parameters!", parent=self.top)
 
+
+class ScheduleWindow(object):
+    def __init__(self, root, bm):
+        self.top = Toplevel(root)
+        self.drawSchedule(bm)
+
+
+    def drawSchedule(self, bm):
+        Label(self.top, text='Day', font='Arial 10 bold').grid(row=1, column=1)
+        Label(self.top, text='work', font='Arial 10 bold').grid(row=1, column=2)
+        Label(self.top, text='start', font='Arial 10 bold').grid(row=1, column=3)
+        Label(self.top, text='finish', font='Arial 10 bold').grid(row=1, column=4)
+        Label(self.top, text='dinner', font='Arial 10 bold').grid(row=1, column=5)
+        self.bm = bm
+        self.entries = {}
+        self.buttons = {}
+        self.checkbuttons = {}
+
+        for i in range(7):
+            Label(self.top, text=bm.getDayName(i), font='Arial 10 bold').grid(row=(i+2), column=1)
+            self.drawCheckbutton('work', i+2, 2, i, bm.schedule[i]['work'])
+            self.drawEntry('start', i+2, 3, i, bm.schedule[i]['workRange'][0])
+            self.drawEntry('finish', i+2, 4, i, bm.schedule[i]['workRange'][1])
+            self.drawCheckbutton('dinner', i+2, 5, i, bm.schedule[i]['dinner'])
+
+        self.drawOkCancel(i+3)
+
+ 
+    def drawEntry(self, name, row, column, i, var=""):
+        self.entries[name+str(i)] = Entry(self.top)
+        self.entries[name+str(i)].grid(row=row, column=column)
+
+        self.entries[name+str(i)].delete(0, END)
+        self.entries[name+str(i)].insert(0, str(var))
+
+
+    def drawCheckbutton(self, name, row, column, i, val=0):
+        self.checkbuttons[name+str(i)] = IntVar()
+        cb = Checkbutton(self.top, text='', variable=self.checkbuttons[name+str(i)])
+        if val: cb.select()
+        cb.grid(row=row, column=column)
+        
+
+    def drawOkCancel(self, row):
+        self.buttons['ok'] = Button(self.top, text='Ok',command=self.saveAndExit)
+        self.buttons['ok'].grid(row=row, column=1, columnspan=2)
+
+        self.buttons['cancel'] = Button(self.top, text='Cancel',command=self.cancel)
+        self.buttons['cancel'].grid(row=row, column=3, columnspan=2)
+
+
+    def validate(self):
+        for i in range(7):
+            if self.checkbuttons['work'+str(i)].get():
+                l = int(self.entries['start'+str(i)].get())
+                r = int(self.entries['finish'+str(i)].get())
+                if l > r or l < 0 or r > 24:
+                   return False   
+        return True
+
+
+    def saveParameters(self):
+        for i in range(7):
+            self.bm.schedule[i]['work'] = self.checkbuttons['work'+str(i)].get()
+            if self.bm.schedule[i]['work']:
+                self.bm.schedule[i]['dinner'] = self.checkbuttons['dinner'+str(i)].get()
+                self.bm.schedule[i]['workRange'] = (int(self.entries['start'+str(i)].get()), int(self.entries['finish'+str(i)].get()))
+
+
+    def saveAndExit(self):        
+        try:
+            if self.validate():
+                self.saveParameters()                
+                self.top.destroy()
+            else:
+                raise ValueError
+
+        except ValueError:
+            tkMessageBox.showwarning("Error", "Invalid parameters!", parent=self.top)
+
+
+    def cancel(self):
+        self.top.destroy()
 
 
