@@ -11,6 +11,7 @@ class BankModel(Model):
                  schedule=None,
                  dinnerRange=(12,15),
                  dinnerLen=30,
+                 costRange=(3,50),
                  closeBeforeTime=-1
     ):
         self.dinnerRange = dinnerRange
@@ -19,6 +20,8 @@ class BankModel(Model):
         self.processingRange = processingRange
         self.clerkCount = clerkCount
         self.closeBeforeTime = closeBeforeTime
+        self.costRange = costRange
+        self.queue = Queue()
 
         if schedule == None:
             self.schedule = self.getDefaultSchedule()

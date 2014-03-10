@@ -1,10 +1,9 @@
 class Model(object):
-    def __init__(self, step=10, range=30, startDay=0, startTime=9*60):
-        self.step      = step
-        self.range     = range
-        self.day       = startDay
-        self.startTime = startTime
-        self.time      = self.startTime
+    step = 10
+    range = 30
+    startDay = 0
+    startTime = 9
+    time = startTime
 
 
     def nextStep(self):
@@ -30,3 +29,26 @@ class Model(object):
     def finished(self):
         return (self.getDaysElapsed() >= self.range)
 
+
+    def getDayNum(self, name):
+        return {
+            'monday': 0,
+            'tuesday': 1,
+            'wednesday': 2,
+            'thursday': 3,
+            'friday': 4,
+            'saturday': 5,
+            'sunday': 6
+        } [name.lower()]
+
+
+    def getDayName(self):
+        return {
+            0: 'monday',
+            1: 'tuesday',
+            2: 'wednesday',
+            3: 'thursday',
+            4: 'friday',
+            5: 'saturday',
+            6: 'sunday'
+        } [self.getDayOfWeek()]
