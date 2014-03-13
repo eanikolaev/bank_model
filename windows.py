@@ -1,6 +1,6 @@
 from Tkinter import *
 import tkMessageBox
-
+import time
 
 class MainWindow(object):
     def __init__(self, bankmodel):
@@ -37,23 +37,39 @@ class MainWindow(object):
     def drawLabels(self):
         self.labels = {
             'time': Label(self.root, text='21:00', font='Arial 24 bold'),
+            'day': Label(self.root, text='monday', font='Arial 24 bold', width=12),
             'stat': Label(self.root, text='Statistics:\n\nparameter1\nparameter2', width=50)
         }
 
-        self.labels['time'].grid(row=1, column=4, columnspan=4)
+        self.labels['time'].grid(row=1, column=5, columnspan=1)
+        self.labels['day'].grid(row=1, column=4, columnspan=1)
         self.labels['stat'].grid(row=2, column=1, columnspan=3)
  
 
     def drawCanvas(self):
         self.canvas = Canvas(self.root, width=1000, height=700)
         self.canvas.grid(row=2, column=4, columnspan=4)
-        self.canvas.create_rectangle(0, 0, 999, 699, fill="blue")
+        self.canvas.create_rectangle(0, 0, 999, 699, fill="lemon chiffon")
 
 
     def drawSlider(self):
-        self.slider = Scale(self.root, orient=HORIZONTAL, from_=0, to=30, resolution=0.2, label='Change speed', length=400, tickinterval=10)
+        self.slider = Scale(self.root, orient=HORIZONTAL, from_=0.1, to=10, resolution=0.1, label='Change speed', length=350, tickinterval=0)
         self.slider.set(1)
         self.slider.grid(row=3, column=5)
+
+
+    def drawClerks(self):
+        clerkCount = self.bm.clerkCount
+        step = int(self.canvas.cget('width')) / clerkCount
+        pos = step/2
+        for i in range(clerkCount):
+            self.drawClerk(self.bm.clerks[i], pos)
+            pos += step            
+
+
+    def drawClerk(self, clerk, pos, up=20, down=45):
+        self.canvas.create_text(pos-1, up-10, text=str(clerk.num))
+        self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="steel blue")
 
 
     def popupParameters(self):

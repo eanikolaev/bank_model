@@ -22,8 +22,22 @@ class Model(object):
         return (self.getMinutesElapsed() / 60)
 
 
+    def getCurrentTime(self):
+        me = self.getMinutesElapsed() % 60
+        if me < 10:
+            me = '0' + str(me)
+        else:
+            me = str(me)
+
+        return str(self.getHoursElapsed() % 24), me
+
+
     def getDayOfWeek(self):
         return (self.startDay + self.getDaysElapsed()) % 7
+
+
+    def getNameDayOfWeek(self):
+        return self.getDayName(self.getDayOfWeek())
 
 
     def finished(self):
