@@ -3,7 +3,7 @@ class Model(object):
     range = 30
     startDay = 0
     startTime = 9
-    time = startTime
+    time = startTime*60
 
 
     def nextStep(self):
@@ -15,7 +15,7 @@ class Model(object):
 
 
     def getMinutesElapsed(self):
-        return (self.time - self.startTime)
+        return (self.time)
 
 
     def getHoursElapsed(self):
@@ -41,7 +41,7 @@ class Model(object):
 
 
     def finished(self):
-        return (self.getDaysElapsed() >= self.range)
+        return (self.getDaysElapsed() - self.startDay >= self.range)
 
 
     def getDayNum(self, name):

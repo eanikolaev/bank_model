@@ -14,12 +14,23 @@ class MainWindow(object):
         self.drawLabels()
         self.drawCanvas()
         self.drawSlider()
+        self.clients = []
+        self.clerks = []
+        self.readOnly = False
+
+
+    def updateAll(self):
+        self.labels['time']['text'] = "%s:%s" % self.bm.getCurrentTime()
+        self.labels['day']['text'] = self.bm.getNameDayOfWeek()
+        self.drawQueue()
+        self.drawClerks()
 
 
     def drawButtons(self):
         self.buttons = {
             'start': Button(self.root, text = 'Start'),
             'pause': Button(self.root, text = 'Pause', state=DISABLED),
+            'stop': Button(self.root, text = 'Stop', state=DISABLED),
             'parameters': Button(self.root, text='Parameters', command=self.popupParameters),
             'exit': Button(self.root, text = 'Exit', command=self.root.destroy),
             'skipday': Button(self.root, text = 'Skip day'),
@@ -32,13 +43,14 @@ class MainWindow(object):
         self.buttons['skipday'].grid(row=3, column=4)
         self.buttons['start'].grid(row=3, column=6)
         self.buttons['pause'].grid(row=3, column=7)
+        self.buttons['stop'].grid(row=3, column=8)
 
 
     def drawLabels(self):
         self.labels = {
             'time': Label(self.root, text='21:00', font='Arial 24 bold'),
             'day': Label(self.root, text='monday', font='Arial 24 bold', width=12),
-            'stat': Label(self.root, text='Statistics:\n\nparameter1\nparameter2', width=50)
+            'stat': Label(self.root, text='', width=30, font='Arial 16 bold')
         }
 
         self.labels['time'].grid(row=1, column=5, columnspan=1)
@@ -48,7 +60,7 @@ class MainWindow(object):
 
     def drawCanvas(self):
         self.canvas = Canvas(self.root, width=1000, height=700)
-        self.canvas.grid(row=2, column=4, columnspan=4)
+        self.canvas.grid(row=2, column=4, columnspan=5)
         self.canvas.create_rectangle(0, 0, 999, 699, fill="lemon chiffon")
 
 
@@ -59,6 +71,7 @@ class MainWindow(object):
 
 
     def drawClerks(self):
+        self.clearClerks()
         clerkCount = self.bm.clerkCount
         step = int(self.canvas.cget('width')) / clerkCount
         pos = step/2
@@ -68,46 +81,84 @@ class MainWindow(object):
 
 
     def drawClerk(self, clerk, pos, up=20, down=45):
-        self.canvas.create_text(pos-1, up-10, text=str(clerk.num))
-        self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="steel blue")
+        self.clerks.append(self.canvas.create_text(pos-1, up-10, text=str(clerk.num)))
+        self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="steel blue"))
+        if clerk.application:
+            for c in self.drawClient(clerk.application.num, pos, down+25, 20, 20):
+                self.clerks.append(c)
+
+
+    def drawQueue(self, startx=50):
+        self.clearQueue()
+        y = 500
+        x = startx
+        for a in self.bm.queue.apps:
+            self.pushToQueue(self.drawClient(a.num, x, y, 20, 20))
+            x += 35
+
+
+    def drawClient(self, i, x, y, sizex, sizey):
+        res = []
+        res.append(self.canvas.create_rectangle(x, y, x+sizex, y+sizey, fill='tomato'))
+        res.append(self.canvas.create_text(x, y+sizey+10, text=str(i)))
+        return res
+
+
+    def pushToQueue(self, clients):
+        for c in clients:
+             self.clients.append(c)
+
+
+    def clearQueue(self):
+        for c in self.clients:
+            self.canvas.delete(c)
+        self.clients = []
+
+
+    def clearClerks(self):
+        for c in self.clerks:
+            self.canvas.delete(c)
+        self.clerks = []
+
 
 
     def popupParameters(self):
-        self.pw = ParametersWindow(self.root, self.bm)
+        self.pw = ParametersWindow(self.root, self.bm, self)
         self.root.wait_window(self.pw.top)
 
 
     def popupSchedule(self):
-        self.sw = ScheduleWindow(self.root, self.bm)
+        self.sw = ScheduleWindow(self.root, self.bm, self)
         self.root.wait_window(self.sw.top)
 
 
 class ParametersWindow(object):
-    def __init__(self, root, bm):
+    def __init__(self, root, bm, mw):
         self.top = Toplevel(root)
         self.labels = {}
         self.entries = {}
         self.buttons = {}
         self.bm = bm
+        self.mw = mw
        
         self.parameters = [
-            ('Set modeling range (in days)', [ ('range', self.bm.range) ], 2),
-            ('Set modeling step (in minutes)', [ ('step', self.bm.step) ], 2),
-            ('Set start day of week (english name)', [ ('startDay', self.bm.startDay) ], 2),
-            ('Set start time (in hours)' , [ ('startTime', self.bm.time) ], 2),
-            ('Set the number of clerks' , [('clerkCount', self.bm.clerkCount) ], 2),
-            ('Set boundaries of time between 2 applications (in minutes)', [ ('arrivalLeft', self.bm.arrivalRange[0]) , 
-                                                                             ('arrivalRight', self.bm.arrivalRange[1]) ], 2),
-            ('Set boundaries of application processing time (in minutes)', [ ('processingLeft', self.bm.processingRange[0]),
-                                                                             ('processingRight', self.bm.processingRange[1]) ], 2),
-            ('Set boundaries of dinner time (in hours)' , [('dinnerStart', self.bm.dinnerRange[0]), 
-                                                           ('dinnerFinish', self.bm.dinnerRange[1]) ], 2),
-            ('Set time when bank should be closed to enter\n(in minutes before official close time)' , [('beforeTime', self.bm.closeBeforeTime) ], 3),
-            ('Set boundaries of application cost (in thousands of roubles)' , [('costMin', self.bm.costRange[0]),
-                                                                               ('costMax', self.bm.costRange[1])
-                                                                              ], 2),
-            ('Set max length of queue' , [('maxLen', self.bm.queue.maxLen) ], 2),
-            ('Set threshold of queue' , [('threshold', self.bm.queue.threshold) ], 2),
+            ['Set modeling range (in days)', [ ['range', 'range', None] ], 2],
+            ['Set modeling step (in minutes)', [ ['step', 'step', None] ], 2],
+            ['Set start day of week (english name)', [ ['startDay', 'startDay', None] ], 2],
+            ['Set start time (in hours)' , [ ['startTime', 'startTime', None] ], 2],
+            ['Set the number of clerks' , [['clerkCount', 'clerkCount', None] ], 2],
+            ['Set boundaries of time between 2 applications (in minutes)', [ ['arrivalLeft', 'arrivalRange', '0'] , 
+                                                                             ['arrivalRight', 'arrivalRange', '1'] ], 2],
+            ['Set boundaries of application processing time (in minutes)', [ ['processingLeft', 'processingRange', '0'],
+                                                                             ['processingRight','processingRange', '1'] ], 2],
+            ['Set boundaries of dinner time (in hours)' , [['dinnerStart', 'dinnerRange', '0'], 
+                                                           ['dinnerFinish', 'dinnerRange','1'] ], 2],
+            ['Set time when bank should be closed to enter\n(in minutes before official close time)' , [['beforeTime', 'closeBeforeTime', None] ], 3],
+            ['Set boundaries of application cost (in thousands of roubles)' , [['costMin', 'costRange', '0'],
+                                                                               ['costMax', 'costRange', '1']
+                                                                              ], 2],
+            ['Set max length of queue' , [['maxLen', 'maxLen', 'queue'] ], 2],
+            ['Set threshold of queue' , [['threshold', 'threshold', 'queue'] ], 2],
         ]
 
         self.drawParameters()        
@@ -130,16 +181,32 @@ class ParametersWindow(object):
             self.drawLabel(label, i, height=height)
 
             i += 1
-            for name, var in params:
-                self.drawParameter(name, i, var)
+            for name, var, rest in params:
+                val = None
+                if rest:
+                    if rest == 'queue':
+                        val = getattr(self.bm.queue, var)
+                    else:
+                        val = getattr(self.bm, var)[int(rest)]
+                else:
+                    val = getattr(self.bm, var)
+
+                self.drawParameter(name, i, val)
                 i += 1
         self.drawOkCancel(i)
 
 
     def saveParameters(self):
         for label, params, height in self.parameters:
-            for name, var in params:
-                var = int(self.entries[name].get())
+            for name, var, rest in params:
+                if rest:
+                    if rest == 'queue':
+                        setattr(self.bm.queue, var, int(self.entries[name].get()))
+                    else:
+                        getattr(self.bm, var)[int(rest)] = int(self.entries[name].get())
+                else:
+                    setattr(self.bm, var, int(self.entries[name].get()))
+        self.bm.time = self.bm.startTime*60
 
 
     def drawLabel(self, name, row, height=2):
@@ -147,11 +214,14 @@ class ParametersWindow(object):
 
 
     def drawOkCancel(self, row):
-        self.buttons['ok'] = Button(self.top, text='Ok',command=self.saveAndExit)
+        self.buttons['ok'] = Button(self.top, text='Ok',command=self.saveAndExit)        
         self.buttons['ok'].grid(row=row, column=1)
 
         self.buttons['cancel'] = Button(self.top, text='Cancel',command=self.cancel)
         self.buttons['cancel'].grid(row=row, column=2)
+
+        if self.mw.readOnly:
+            self.buttons['ok'].configure(state=DISABLED)
 
     
     def cancel(self):
@@ -161,15 +231,17 @@ class ParametersWindow(object):
     def saveAndExit(self):        
         try:
             self.saveParameters()
-            self.top.destroy()
+            self.mw.updateAll()
+            self.top.destroy()            
 
         except ValueError:
             tkMessageBox.showwarning("Error", "Invalid parameters!", parent=self.top)
 
 
 class ScheduleWindow(object):
-    def __init__(self, root, bm):
+    def __init__(self, root, bm, mw):
         self.top = Toplevel(root)
+        self.mw = mw
         self.drawSchedule(bm)
 
 
@@ -215,6 +287,9 @@ class ScheduleWindow(object):
 
         self.buttons['cancel'] = Button(self.top, text='Cancel',command=self.cancel)
         self.buttons['cancel'].grid(row=row, column=3, columnspan=2)
+
+        if self.mw.readOnly:
+            self.buttons['ok'].configure(state=DISABLED)
 
 
     def validate(self):

@@ -10,4 +10,9 @@ class Queue(object):
 
 
     def pop(self):
-        return self.apps.pop()
+        if self.apps:
+            el = self.apps[0]
+            self.apps = self.apps[1:]
+            return el
+        else:
+            return None

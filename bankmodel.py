@@ -1,17 +1,19 @@
 from model import Model
 from clerk import Clerk
 from queue import Queue
+from numpy.random import uniform
+from application import Application
 
 
 class BankModel(Model):
     def __init__(self,
-                 arrivalRange=(0,10),
-                 processingRange=(2,30),
+                 arrivalRange=[0,10],
+                 processingRange=[2,30],
                  clerkCount=7,
                  schedule=None,
-                 dinnerRange=(12,15),
+                 dinnerRange=[12,15],
                  dinnerLen=30,
-                 costRange=(3,50),
+                 costRange=[3,50],
                  closeBeforeTime=-1
     ):
         self.dinnerRange = dinnerRange
@@ -30,13 +32,14 @@ class BankModel(Model):
         finishDinnerTime = (self.dinnerRange[1] * 60) - self.dinnerLen
         dinnerStep = (finishDinnerTime - startDinnerTime) / self.clerkCount
         dinnerTime = startDinnerTime
-        clerks = ()
+        clerks = []
         for i in range(self.clerkCount):            
-            c = Clerk(i, dinnerTime)            
-            clerks += (c, )
+            c = Clerk(i+1, dinnerTime)            
+            clerks.append(c)
             dinnerTime += dinnerStep
 
         self.clerks = clerks
+
 
     def getDefaultSchedule(self):
         s = dict( [ (i, self.getDefaultWorkDay()) for i in range(5) ] )
@@ -56,3 +59,22 @@ class BankModel(Model):
     def getDefaultFreeDay(self):
         return { 'work': False, 'workRange': (9, 18), 'dinner': True}
 
+
+    def getNextAppArrivalTime(self):
+        return uniform(self.arrivalRange[0], self.arrivalRange[1])
+
+
+    def getNextAppCost(self):
+        return uniform(self.costRange[0], self.costRange[1])
+
+
+    def getNextAppProcessingTime(self):
+        return uniform(self.processingRange[0], self.processingRange[1])
+
+
+    def clear(self):
+        Application.num = 0 
+        self.queue = Queue()
+        for c in self.clerks:
+            c.application = None
+            c.status = 'free'

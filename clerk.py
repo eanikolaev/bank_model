@@ -5,6 +5,7 @@ class Clerk(object):
         self.dinnerStart = dinnerStart
         self.status = status
         self.salary = self.getSalary()
+        self.application = None
 
 
     def getSalary(self):
