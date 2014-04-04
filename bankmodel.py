@@ -8,13 +8,13 @@ from application import Application
 class BankModel(Model):
     def __init__(self,
                  arrivalRange=[0,5],
-                 processingRange=[10,30],
+                 processingRange=[0,25],
                  clerkCount=5,
                  schedule=None,
                  dinnerRange=[12,15],
                  dinnerLen=30,
-                 costRange=[3, 5000],
-                 closeBeforeTime=-1
+                 costRange=[5, 3000],
+                 closeBeforeTime=20
     ):
         self.dinnerRange = dinnerRange
         self.dinnerLen = dinnerLen
@@ -61,7 +61,14 @@ class BankModel(Model):
 
 
     def getNextAppArrivalTime(self):
-        return uniform(self.arrivalRange[0], self.arrivalRange[1])
+        day = self.getDayOfWeek() + 1
+        hour = int(self.getCurrentTime()[0])
+        end = int(self.schedule[day]['workRange'][1])
+        k = 5 / (9 *(hour/float(end) + day/18.0))
+        l = self.arrivalRange[0]
+        r = int(k*self.arrivalRange[1])
+        if r < l: r = l+1
+        return uniform(l, r)
 
 
     def getNextAppCost(self):

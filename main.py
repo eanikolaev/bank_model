@@ -1,7 +1,9 @@
 from application import Application
+from queue import Queue
 from bankmodel import BankModel
 from windows import MainWindow
 from Tkinter import *
+from random import randint
 
 
 def updateTime():
@@ -10,9 +12,12 @@ def updateTime():
     mw.bm.nextStep()
     if not closed:
         ticks += 1
+        calcQueueStat()
+        calcClerkStat()
+        if arrivalTime and arrivalTime <= mw.bm.time:
+            nextApplication()
+        processQueue()
 
-    calcQueueStat()
-    calcClerkStat()
     processSchedule()
 
     if mw.bm.finished():
@@ -21,11 +26,6 @@ def updateTime():
 
     if newDayTime and newDayTime <= mw.bm.time:
         everyDay()
-
-    if arrivalTime and arrivalTime <= mw.bm.time:
-        nextApplication()
-    
-    processQueue()
  
     if skipTime:
         if mw.bm.time >= (skipTime + skipMins + skipHours*60):
@@ -57,8 +57,9 @@ def processSchedule():
     workStartHours  = int(schedule['workRange'][0])
     workFinishHours = int(schedule['workRange'][1])
 
-    for i in range(len(mw.bm.clerks)):
-        if (mw.bm.clerks[i].dinnerStart <= mw.bm.time <= mw.bm.clerks[i].dinnerStart+mw.bm.dinnerLen):
+    if schedule['dinner']:
+      for i in range(len(mw.bm.clerks)):
+        if (mw.bm.clerks[i].dinnerStart <= currentHours*60+currentMinutes <= mw.bm.clerks[i].dinnerStart+mw.bm.dinnerLen):
             mw.bm.clerks[i].status = 'dinner'
         elif mw.bm.clerks[i].application:
             mw.bm.clerks[i].status = 'busy'
@@ -70,9 +71,8 @@ def processSchedule():
         skip(60-currentMinutes, workStartHours-currentHours-1)
     elif (mw.bm.closeBeforeTime != -1 and 
           currentHours == workFinishHours - 1 and
-          (60-currentMinutes)<=closeBeforeTime):
+          (60-currentMinutes)<=mw.bm.closeBeforeTime):
         closedOnOpen = True
-
     elif (currentHours >= workFinishHours):
         closed = True
         allAway()
@@ -80,8 +80,11 @@ def processSchedule():
 
 
 def allAway():
+    global nextApp
     stat['Clients']['missed'][0] += len(mw.bm.queue.apps)
-    mw.bm.queue.apps = []
+    mw.bm.queue = Queue()
+    Application.num = 0
+    nextApp = None
     for i in range(len(mw.bm.clerks)):
         if mw.bm.clerks[i].application:
             stat['Clients']['missed'][0] += 1
@@ -106,11 +109,14 @@ def updateStat():
 def nextApplication():
     global arrivalTime, nextApp, stat, appsCount, closed, closedOnEnter
     
-    if nextApp:
-        if len(mw.bm.queue.apps) < mw.bm.queue.maxLen and not closedOnEnter:            
-            mw.bm.queue.push(nextApp)
-            if not skipTime:
-                mw.drawQueue()
+    if nextApp and not closed:
+        if len(mw.bm.queue.apps) < mw.bm.queue.maxLen and not closedOnEnter:
+            if (len(mw.bm.queue.apps) > mw.bm.queue.threshold and not randint(0,4)):
+                pass
+            else:
+                mw.bm.queue.push(nextApp)
+                if not skipTime:
+                    mw.drawQueue()
         else:
             stat['Clients']['missed'][0] += 1
 
@@ -161,6 +167,7 @@ def finish():
     mw.buttons['start'].configure(state=NORMAL)
     mw.buttons['pause'].configure(text='Pause')
     mw.buttons['pause'].configure(state=DISABLED)
+    mw.buttons['skipday'].configure(state=DISABLED)
     mw.readOnly = False
     if waitLabel:
         mw.canvas.delete(waitLabel)
@@ -236,6 +243,7 @@ def start():
     mw.buttons['pause'].configure(text='Pause')
     mw.buttons['start'].configure(state=DISABLED)
     mw.buttons['stop'].configure(state=NORMAL)
+    mw.buttons['skipday'].configure(state=NORMAL)
     mw.bm.clear()
     mw.updateAll()
     mw.readOnly = True
@@ -271,7 +279,8 @@ def skip(mins, hours=0):
 
 
 def skipDay():
-    skip(0, 24)
+    allAway()
+    skip(0, 24-int(mw.bm.getCurrentTime()[0]))
 
 
 if __name__ == '__main__':    
