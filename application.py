@@ -1,13 +1,16 @@
 from random import randint
 class Application(object):
     num = 0
-    def __init__(self, duration, costRange=(3000, 50000), cost=None):
+    def __init__(self, duration, arrivalTime, costRange=(3000, 50000), cost=None):
         if cost == None:
-            self.cost = self.getRandomCost(costRange)
+            self.cost = int(self.getRandomCost(costRange))
+        else:
+            self.cost = cost
 
         Application.num += 1
         self.num = Application.num
         self.duration = duration
+        self.arrivalTime = arrivalTime
 
 
     def getRandomCost(self, (l,r) ):

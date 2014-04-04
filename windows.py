@@ -81,8 +81,16 @@ class MainWindow(object):
 
 
     def drawClerk(self, clerk, pos, up=20, down=45):
-        self.clerks.append(self.canvas.create_text(pos-1, up-10, text=str(clerk.num)))
-        self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="steel blue"))
+        self.clerks.append(self.canvas.create_text(pos, up-10, text='Clerk ' + str(clerk.num)))
+        if clerk.status == 'busy':
+            self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="red"))
+        elif clerk.status == 'free':
+	    self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="lime green"))
+        elif clerk.status == 'dinner':
+	    self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="yellow"))
+        else:
+	    self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="steel blue"))
+        
         if clerk.application:
             for c in self.drawClient(clerk.application.num, pos, down+25, 20, 20):
                 self.clerks.append(c)
@@ -94,7 +102,7 @@ class MainWindow(object):
         x = startx
         for a in self.bm.queue.apps:
             self.pushToQueue(self.drawClient(a.num, x, y, 20, 20))
-            x += 35
+            x += 50
 
 
     def drawClient(self, i, x, y, sizex, sizey):
@@ -144,7 +152,7 @@ class ParametersWindow(object):
         self.parameters = [
             ['Set modeling range (in days)', [ ['range', 'range', None] ], 2],
             ['Set modeling step (in minutes)', [ ['step', 'step', None] ], 2],
-            ['Set start day of week (english name)', [ ['startDay', 'startDay', None] ], 2],
+            ['Set start day of week', [ ['startDay', 'startDay', None] ], 2],
             ['Set start time (in hours)' , [ ['startTime', 'startTime', None] ], 2],
             ['Set the number of clerks' , [['clerkCount', 'clerkCount', None] ], 2],
             ['Set boundaries of time between 2 applications (in minutes)', [ ['arrivalLeft', 'arrivalRange', '0'] , 
@@ -154,7 +162,7 @@ class ParametersWindow(object):
             ['Set boundaries of dinner time (in hours)' , [['dinnerStart', 'dinnerRange', '0'], 
                                                            ['dinnerFinish', 'dinnerRange','1'] ], 2],
             ['Set time when bank should be closed to enter\n(in minutes before official close time)' , [['beforeTime', 'closeBeforeTime', None] ], 3],
-            ['Set boundaries of application cost (in thousands of roubles)' , [['costMin', 'costRange', '0'],
+            ['Set boundaries of application cost' , [['costMin', 'costRange', '0'],
                                                                                ['costMax', 'costRange', '1']
                                                                               ], 2],
             ['Set max length of queue' , [['maxLen', 'maxLen', 'queue'] ], 2],

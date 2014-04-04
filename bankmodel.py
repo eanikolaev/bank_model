@@ -7,13 +7,13 @@ from application import Application
 
 class BankModel(Model):
     def __init__(self,
-                 arrivalRange=[0,10],
-                 processingRange=[2,30],
-                 clerkCount=7,
+                 arrivalRange=[0,5],
+                 processingRange=[10,30],
+                 clerkCount=5,
                  schedule=None,
                  dinnerRange=[12,15],
                  dinnerLen=30,
-                 costRange=[3,50],
+                 costRange=[3, 5000],
                  closeBeforeTime=-1
     ):
         self.dinnerRange = dinnerRange
@@ -65,11 +65,18 @@ class BankModel(Model):
 
 
     def getNextAppCost(self):
-        return uniform(self.costRange[0], self.costRange[1])
+        return int(uniform(self.costRange[0], self.costRange[1]))
 
 
     def getNextAppProcessingTime(self):
         return uniform(self.processingRange[0], self.processingRange[1])
+
+
+    def allAway(self):
+        for c in self.clerks:
+           c.application = None
+           c.status = 'free'
+        self.queue.apps = []
 
 
     def clear(self):

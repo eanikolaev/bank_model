@@ -1,5 +1,5 @@
 class Model(object):
-    step = 10
+    step = 1
     range = 30
     startDay = 0
     startTime = 9

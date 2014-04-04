@@ -5,33 +5,34 @@ from Tkinter import *
 
 
 def updateTime():
-    global time_alarm, stat, skipTime, waitLabel
+    global time_alarm, stat, skipTime, waitLabel, ticks, queueLens, skipMins, skipHours, closed
     time_alarm = mw.labels['time'].after(tickStep, updateTime)
     mw.bm.nextStep()
-    if arrivalTime and arrivalTime <= mw.bm.time:
-        nextApplication()
+    if not closed:
+        ticks += 1
+
+    calcQueueStat()
+    calcClerkStat()
+    processSchedule()
 
     if mw.bm.finished():
         finish()
         return
-    
-    for i in range(len(mw.bm.clerks)):
-        if mw.bm.clerks[i].status == 'free' and mw.bm.queue.apps:                
-            mw.bm.clerks[i].application = mw.bm.queue.pop()
-            mw.bm.clerks[i].status = 'busy' 
-            mw.bm.clerks[i].appTime = mw.bm.time
 
-        elif mw.bm.clerks[i].status == 'busy':
-            if mw.bm.time >= mw.bm.clerks[i].appTime + mw.bm.clerks[i].application.duration:
-                stat['Clients']['served'][0] += 1
-                mw.bm.clerks[i].status = 'free'
-                mw.bm.clerks[i].application = None
-                mw.bm.clerks[i].appTime = 0
+    if newDayTime and newDayTime <= mw.bm.time:
+        everyDay()
+
+    if arrivalTime and arrivalTime <= mw.bm.time:
+        nextApplication()
+    
+    processQueue()
  
     if skipTime:
-        if mw.bm.time >= (skipTime + 24*60):
+        if mw.bm.time >= (skipTime + skipMins + skipHours*60):
             mw.canvas.delete(waitLabel)
             skipTime = None
+            closed = False
+            closedOnEnter = False
         else:
             return
 
@@ -42,6 +43,51 @@ def updateTime():
     updateSpeed()
     updateStat()
        
+
+def processSchedule():
+    global closed
+    currentDay = mw.bm.getDayOfWeek()
+    schedule = mw.bm.schedule[currentDay]
+    next_schedule = mw.bm.schedule[(currentDay+1) % 7]
+    currentHours, currentMinutes = map(int, mw.bm.getCurrentTime())
+    if not schedule['work']:
+        closed = True
+        skip(60 - currentMinutes, 24 - currentHours - 1)
+
+    workStartHours  = int(schedule['workRange'][0])
+    workFinishHours = int(schedule['workRange'][1])
+
+    for i in range(len(mw.bm.clerks)):
+        if (mw.bm.clerks[i].dinnerStart <= mw.bm.time <= mw.bm.clerks[i].dinnerStart+mw.bm.dinnerLen):
+            mw.bm.clerks[i].status = 'dinner'
+        elif mw.bm.clerks[i].application:
+            mw.bm.clerks[i].status = 'busy'
+        else:
+            mw.bm.clerks[i].status = 'free'
+
+    if (currentHours < workStartHours):
+        closed = True
+        skip(60-currentMinutes, workStartHours-currentHours-1)
+    elif (mw.bm.closeBeforeTime != -1 and 
+          currentHours == workFinishHours - 1 and
+          (60-currentMinutes)<=closeBeforeTime):
+        closedOnOpen = True
+
+    elif (currentHours >= workFinishHours):
+        closed = True
+        allAway()
+        skip((24-currentHours)*60)
+
+
+def allAway():
+    stat['Clients']['missed'][0] += len(mw.bm.queue.apps)
+    mw.bm.queue.apps = []
+    for i in range(len(mw.bm.clerks)):
+        if mw.bm.clerks[i].application:
+            stat['Clients']['missed'][0] += 1
+        mw.bm.clerks[i].application = None
+        mw.bm.clerks[i].status = 'free'
+
 
 def updateDay():
     mw.labels['day']['text'] = mw.bm.getNameDayOfWeek()
@@ -58,10 +104,10 @@ def updateStat():
 
 
 def nextApplication():
-    global arrivalTime, nextApp, stat
+    global arrivalTime, nextApp, stat, appsCount, closed, closedOnEnter
     
     if nextApp:
-        if len(mw.bm.queue.apps) < mw.bm.queue.maxLen:            
+        if len(mw.bm.queue.apps) < mw.bm.queue.maxLen and not closedOnEnter:            
             mw.bm.queue.push(nextApp)
             if not skipTime:
                 mw.drawQueue()
@@ -71,7 +117,20 @@ def nextApplication():
     duration = mw.bm.getNextAppProcessingTime()
     cost = mw.bm.getNextAppCost()
     arrivalTime = mw.bm.time + mw.bm.getNextAppArrivalTime()
-    nextApp = Application(cost=cost, duration=duration)
+    nextApp = Application(cost=cost, duration=duration, arrivalTime=mw.bm.time)
+    appsCount += 1
+
+
+
+def everyDay():
+    global newDayTime, stat
+    currentDay = mw.bm.getDayOfWeek()
+    schedule = mw.bm.schedule[currentDay]
+    if schedule['work']:
+        for c in mw.bm.clerks:
+            stat['Others']['bank profit'][0] -= c.salary
+
+    newDayTime += 24*60
 
 
 def getReadableStat(stat):
@@ -79,7 +138,10 @@ def getReadableStat(stat):
     for key in sorted(stat):
         s += key + '\n'
         for p in sorted(stat[key]):
-            s += p + ': ' + str(stat[key][p][0]) + '\n'
+            value = str(stat[key][p][0])
+            if p == 'clerk workload':
+                value += '%'
+            s += p + ': ' + value + '\n'
         s += '\n'
 
     return s
@@ -100,14 +162,68 @@ def finish():
     mw.buttons['pause'].configure(text='Pause')
     mw.buttons['pause'].configure(state=DISABLED)
     mw.readOnly = False
+    if waitLabel:
+        mw.canvas.delete(waitLabel)
     
 
+def processQueue():
+    global allTimeAtQueue
+    for i in range(len(mw.bm.clerks)):
+        if mw.bm.clerks[i].status == 'free' and mw.bm.queue.apps:                
+            mw.bm.clerks[i].application = mw.bm.queue.pop()
+            mw.bm.clerks[i].status = 'busy' 
+            mw.bm.clerks[i].appTime = mw.bm.time
+            allTimeAtQueue += (mw.bm.time - mw.bm.clerks[i].application.arrivalTime)
+            stat['Others']['average time in queue'][0] = allTimeAtQueue / appsCount
+
+        elif mw.bm.clerks[i].application:
+            if mw.bm.time >= mw.bm.clerks[i].appTime + mw.bm.clerks[i].application.duration:
+                stat['Clients']['served'][0] += 1
+                stat['Others']['bank profit'][0] += mw.bm.clerks[i].application.cost
+                if mw.bm.clerks[i].status == 'busy':
+                    mw.bm.clerks[i].status = 'free'
+                mw.bm.clerks[i].application = None
+                mw.bm.clerks[i].appTime = 0
+
+
+def calcQueueStat():
+    global queueLens
+    curQueueLen = len(mw.bm.queue.apps)
+    if curQueueLen < stat['Queue length']['minimum'][0]:
+        stat['Queue length']['minimum'][0] = curQueueLen
+    elif curQueueLen > stat['Queue length']['maximum'][0]:
+        stat['Queue length']['maximum'][0] = curQueueLen
+
+    queueLens += curQueueLen
+    stat['Queue length']['average'][0] = queueLens / ticks
+
+
+def calcClerkStat():
+    global clerkAtWorkCount, clerkAllCount
+    clerkAllCount += len(mw.bm.clerks)
+    for c in mw.bm.clerks:
+        if c.status == 'busy':
+            clerkAtWorkCount += 1
+
+    stat['Others']['clerk workload'][0] = clerkAtWorkCount*100/clerkAllCount
+     
+
 def start():
-    global tickStep, time_alarm, arrivalTime, nextApp, skipTime, waitLabel
+    global tickStep, time_alarm, arrivalTime, nextApp, skipTime, waitLabel, \
+           ticks, queueLens, appsCount, allTimeAtQueue, newDayTime, \
+           clerkAtWorkCount, clerkAllCount, closed, closedOnEnter
+    
     tickStep = defaultTickStep
     time_alarm = None
     arrivalTime = nextApp = None
     skipTime = None
+    skipMins = skipHours = 0
+    ticks = 0
+    appsCount = 0
+    queueLens = 0
+    closed = closedOnEnter = False
+    clerkAtWorkCount = clerkAllCount = 0
+    allTimeAtQueue = 0
     if waitLabel:
         mw.canvas.delete(waitLabel)
     waitLabel = None
@@ -115,6 +231,7 @@ def start():
     init()
     initStat()
     mw.bm.time = mw.bm.startTime*60
+    newDayTime = mw.bm.time + 24*60
     mw.buttons['pause'].configure(state=NORMAL)
     mw.buttons['pause'].configure(text='Pause')
     mw.buttons['start'].configure(state=DISABLED)
@@ -123,7 +240,7 @@ def start():
     mw.updateAll()
     mw.readOnly = True
     nextApplication()
-
+    
 
 def pause():
     global time_alarm, day_alarm, speed_alarm 
@@ -143,11 +260,18 @@ def initStat():
             stat[s][ss][0] = 0
 
 
-def skipDay():
-    global skipTime, tickStep, waitLabel
+def skip(mins, hours=0):
+    global skipTime, tickStep, waitLabel, skipMins, skipHours
+    if waitLabel: mw.canvas.delete(waitLabel)
     waitLabel = mw.canvas.create_text(450, 300, text='Please, wait...', font='Arial 30 bold')
     skipTime = mw.bm.time
+    skipMins = mins
+    skipHours = hours
     tickStep = 0
+
+
+def skipDay():
+    skip(0, 24)
 
 
 if __name__ == '__main__':    
@@ -171,7 +295,6 @@ if __name__ == '__main__':
     }
     waitLabel = None
     defaultTickStep = 500
-
 
     mw.buttons['start'].configure(command=start)
     mw.buttons['pause'].configure(command=pause)
