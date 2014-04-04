@@ -7,7 +7,7 @@ from random import randint
 
 
 def updateTime():
-    global time_alarm, stat, skipTime, waitLabel, ticks, queueLens, skipMins, skipHours, closed
+    global time_alarm, stat, skipTime, waitLabel, ticks, queueLens, skipMins, skipHours, closed, closedOnEnter
     time_alarm = mw.labels['time'].after(tickStep, updateTime)
     mw.bm.nextStep()
     if not closed:
@@ -45,7 +45,7 @@ def updateTime():
        
 
 def processSchedule():
-    global closed
+    global closed, closedOnEnter
     currentDay = mw.bm.getDayOfWeek()
     schedule = mw.bm.schedule[currentDay]
     next_schedule = mw.bm.schedule[(currentDay+1) % 7]
@@ -72,7 +72,7 @@ def processSchedule():
     elif (mw.bm.closeBeforeTime != -1 and 
           currentHours == workFinishHours - 1 and
           (60-currentMinutes)<=mw.bm.closeBeforeTime):
-        closedOnOpen = True
+        closedOnEnter = True
     elif (currentHours >= workFinishHours):
         closed = True
         allAway()
@@ -111,7 +111,7 @@ def nextApplication():
     
     if nextApp and not closed:
         if len(mw.bm.queue.apps) < mw.bm.queue.maxLen and not closedOnEnter:
-            if (len(mw.bm.queue.apps) > mw.bm.queue.threshold and not randint(0,4)):
+            if (len(mw.bm.queue.apps) > mw.bm.queue.threshold and not randint(0,3)):
                 pass
             else:
                 mw.bm.queue.push(nextApp)

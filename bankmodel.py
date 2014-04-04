@@ -7,13 +7,13 @@ from application import Application
 
 class BankModel(Model):
     def __init__(self,
-                 arrivalRange=[0,5],
+                 arrivalRange=[0,7],
                  processingRange=[0,25],
                  clerkCount=5,
                  schedule=None,
                  dinnerRange=[12,15],
                  dinnerLen=30,
-                 costRange=[5, 3000],
+                 costRange=[50, 3000],
                  closeBeforeTime=20
     ):
         self.dinnerRange = dinnerRange
@@ -34,7 +34,7 @@ class BankModel(Model):
         dinnerTime = startDinnerTime
         clerks = []
         for i in range(self.clerkCount):            
-            c = Clerk(i+1, dinnerTime)            
+            c = Clerk(i+1, dinnerTime, level=int(uniform(0,self.clerkCount)))            
             clerks.append(c)
             dinnerTime += dinnerStep
 
