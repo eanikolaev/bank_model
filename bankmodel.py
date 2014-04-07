@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*- 
 from model import Model
 from clerk import Clerk
 from queue import Queue
@@ -66,7 +67,7 @@ class BankModel(Model):
         hour = int(self.getCurrentTime()[0])
         end = int(self.schedule[day]['workRange'][1])
         k = 5 / (9 *(hour/float(end) + (day+1)/18.0))
-        l = self.arrivalRange[0]
+        l = int(k*self.arrivalRange[0])
         r = int(k*self.arrivalRange[1])
         if r < l: r = l+1
         return uniform(l, r)

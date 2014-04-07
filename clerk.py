@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 class Clerk(object):
     def __init__(self, num, dinnerStart, level=0, status='free'):
         self.level = level             # уровень клерка

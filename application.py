@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*- 
 from random import randint
 class Application(object):
     num = 0 # начало нумерации заявок

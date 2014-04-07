@@ -137,7 +137,16 @@ def everyDay():
     schedule = mw.bm.schedule[currentDay]
     if schedule['work']:
         for c in mw.bm.clerks:
-            stat['Others']['bank profit'][0] -= c.salary
+            if c.status != 'away':
+                stat['Others']['bank profit'][0] -= c.salary
+
+    for k in range(mw.bm.clerkCount):
+        if mw.bm.clerks[k].status == 'away':
+            mw.bm.clerks[k].status = 'free'
+
+    if not randint(0,6):
+        k = randint(0, mw.bm.clerkCount-1)
+        mw.bm.clerks[k].status = 'away'
 
     newDayTime += 24*60
 

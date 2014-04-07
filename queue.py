@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*- 
 class Queue(object):
     def __init__(self, maxLen=15, threshold=7):
         self.apps = []             # список заявок

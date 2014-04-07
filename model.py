@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*- 
 class Model(object):
     # шаг моделирования в минутах
     step = 1
