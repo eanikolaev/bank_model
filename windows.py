@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from Tkinter import *
 import tkMessageBox
 import time
@@ -17,6 +18,7 @@ class MainWindow(object):
         self.clients = []
         self.clerks = []
         self.readOnly = False
+        self.information = None
 
 
     def updateAll(self):
@@ -24,6 +26,21 @@ class MainWindow(object):
         self.labels['day']['text'] = self.bm.getNameDayOfWeek()
         self.drawQueue()
         self.drawClerks()
+
+
+    def drawInformation(self, client=None, clerk=None):
+        if self.information:
+            for i in self.information:
+                self.canvas.delete(i)
+ 
+        if client == clerk == None:
+            client = clerk = ''
+
+        clerk = str(clerk)
+        client = str(client)
+        self.information = []
+        self.information.append(self.canvas.create_text(450, 200, text='Client: '+client, font='Arial 16 bold'))
+        self.information.append(self.canvas.create_text(450, 225, text=' Clerk: '+clerk, font='Arial 16 bold'))
 
 
     def drawButtons(self):

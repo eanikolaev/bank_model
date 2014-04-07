@@ -178,7 +178,8 @@ def finish():
     allAway()
     mw.updateAll()
     updateStat()
-    stop()
+    stop()    
+    mw.drawInformation()
     mw.buttons['stop'].configure(state=DISABLED)
     mw.buttons['start'].configure(state=NORMAL)
     mw.buttons['pause'].configure(text='Pause')
@@ -204,6 +205,7 @@ def processQueue():
             mw.bm.clerks[i].appTime = mw.bm.time
             allTimeAtQueue += (mw.bm.time - mw.bm.clerks[i].application.arrivalTime)
             stat['Others']['average time in queue'][0] = allTimeAtQueue / appsCount
+            mw.drawInformation(mw.bm.clerks[i].application.num, mw.bm.clerks[i].num)
 
         elif mw.bm.clerks[i].application:
             if mw.bm.time >= mw.bm.clerks[i].appTime + mw.bm.clerks[i].application.duration:
@@ -357,6 +359,8 @@ if __name__ == '__main__':
     mw.labels['time']['text'] = "%s:%s" % mw.bm.getCurrentTime()
     mw.labels['stat'].after_idle(updateStat)
     mw.drawClerks()
+    mw.drawInformation()
 
     mw.root.mainloop()
+
 
