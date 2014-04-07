@@ -199,6 +199,7 @@ def processQueue():
     for i in range(len(mw.bm.clerks)):
         if mw.bm.clerks[i].status == 'free' and mw.bm.queue.apps:                
             mw.bm.clerks[i].application = mw.bm.queue.pop()
+            mw.bm.clerks[i].application.duration *= ((mw.bm.clerkCount+10) / float(mw.bm.clerks[i].level+1+10))
             mw.bm.clerks[i].status = 'busy' 
             mw.bm.clerks[i].appTime = mw.bm.time
             allTimeAtQueue += (mw.bm.time - mw.bm.clerks[i].application.arrivalTime)

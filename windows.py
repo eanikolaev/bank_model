@@ -84,8 +84,9 @@ class MainWindow(object):
             pos += step            
 
 
-    def drawClerk(self, clerk, pos, up=20, down=45):
-        self.clerks.append(self.canvas.create_text(pos, up-10, text='Clerk ' + str(clerk.num)))
+    def drawClerk(self, clerk, pos, up=40, down=65):
+        self.clerks.append(self.canvas.create_text(pos, up-25, text='Clerk ' + str(clerk.num), font='Arial 10 bold'))
+        self.clerks.append(self.canvas.create_text(pos, up-10, text='(Level ' + str(clerk.level) + ')'))
         if clerk.status == 'busy':
             self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="red"))
         elif clerk.status == 'free':
