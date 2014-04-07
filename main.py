@@ -7,7 +7,7 @@ from random import randint
 
 
 def updateTime():
-    global time_alarm, stat, skipTime, waitLabel, ticks, queueLens, skipMins, skipHours, closed, closedOnEnter
+    global time_alarm, stat, skipTime, waitLabel, ticks, queueLens, skipMins, skipHours, closed, closedOnEnter, skipAllFlag, progressLabel
     time_alarm = mw.labels['time'].after(tickStep, updateTime)
     mw.bm.nextStep()
     if not closed:
@@ -36,13 +36,14 @@ def updateTime():
         else:
             return
 
-    mw.drawQueue()
-    mw.drawClerks()
-    mw.labels['time']['text'] = "%s:%s" % mw.bm.getCurrentTime()
-    updateDay()
-    updateSpeed()
-    updateStat()
-       
+    if not skipAllFlag:
+        mw.drawQueue()
+        mw.drawClerks()
+        mw.labels['time']['text'] = "%s:%s" % mw.bm.getCurrentTime()
+        updateDay()
+        updateSpeed()
+        updateStat()
+
 
 def processSchedule():
     global closed, closedOnEnter
@@ -80,14 +81,16 @@ def processSchedule():
 
 
 def allAway():
-    global nextApp
+    global nextApp, stat
     stat['Clients']['missed'][0] += len(mw.bm.queue.apps)
     mw.bm.queue = Queue()
     Application.num = 0
     nextApp = None
     for i in range(len(mw.bm.clerks)):
         if mw.bm.clerks[i].application:
-            stat['Clients']['missed'][0] += 1
+            stat['Clients']['served'][0] += 1
+            stat['Others']['bank profit'][0] += mw.bm.clerks[i].application.cost
+       
         mw.bm.clerks[i].application = None
         mw.bm.clerks[i].status = 'free'
 
@@ -115,7 +118,7 @@ def nextApplication():
                 pass
             else:
                 mw.bm.queue.push(nextApp)
-                if not skipTime:
+                if not skipTime and not skipAllFlag:
                     mw.drawQueue()
         else:
             stat['Clients']['missed'][0] += 1
@@ -162,15 +165,24 @@ def stop():
 
 
 def finish():
+    global waitLabel, progressLabel
+    allAway()
+    mw.updateAll()
+    updateStat()
     stop()
     mw.buttons['stop'].configure(state=DISABLED)
     mw.buttons['start'].configure(state=NORMAL)
     mw.buttons['pause'].configure(text='Pause')
     mw.buttons['pause'].configure(state=DISABLED)
     mw.buttons['skipday'].configure(state=DISABLED)
+    mw.buttons['skiphour'].configure(state=DISABLED)
+    mw.buttons['skipall'].configure(state=DISABLED)
     mw.readOnly = False
+    skipAllFlag = False
     if waitLabel:
         mw.canvas.delete(waitLabel)
+
+    progressLabel = waitLabel = None
     
 
 def processQueue():
@@ -218,12 +230,14 @@ def calcClerkStat():
 def start():
     global tickStep, time_alarm, arrivalTime, nextApp, skipTime, waitLabel, \
            ticks, queueLens, appsCount, allTimeAtQueue, newDayTime, \
-           clerkAtWorkCount, clerkAllCount, closed, closedOnEnter
+           clerkAtWorkCount, clerkAllCount, closed, closedOnEnter, skipAllFlag, \
+           progressLabel
     
     tickStep = defaultTickStep
     time_alarm = None
     arrivalTime = nextApp = None
     skipTime = None
+    skipAllFlag = False
     skipMins = skipHours = 0
     ticks = 0
     appsCount = 0
@@ -234,6 +248,7 @@ def start():
     if waitLabel:
         mw.canvas.delete(waitLabel)
     waitLabel = None
+    progressLabel = None
 
     init()
     initStat()
@@ -244,6 +259,8 @@ def start():
     mw.buttons['start'].configure(state=DISABLED)
     mw.buttons['stop'].configure(state=NORMAL)
     mw.buttons['skipday'].configure(state=NORMAL)
+    mw.buttons['skiphour'].configure(state=NORMAL)
+    mw.buttons['skipall'].configure(state=NORMAL)
     mw.bm.clear()
     mw.updateAll()
     mw.readOnly = True
@@ -270,8 +287,10 @@ def initStat():
 
 def skip(mins, hours=0):
     global skipTime, tickStep, waitLabel, skipMins, skipHours
+    if skipTime: return
     if waitLabel: mw.canvas.delete(waitLabel)
-    waitLabel = mw.canvas.create_text(450, 300, text='Please, wait...', font='Arial 30 bold')
+    if not skipAllFlag:
+        waitLabel = mw.canvas.create_text(450, 300, text='Please, wait...', font='Arial 30 bold')
     skipTime = mw.bm.time
     skipMins = mins
     skipHours = hours
@@ -281,6 +300,19 @@ def skip(mins, hours=0):
 def skipDay():
     allAway()
     skip(0, 24-int(mw.bm.getCurrentTime()[0]))
+
+
+def skipHour():
+    allAway()
+    skip(0, 1)
+
+
+def skipAll():
+    global skipAllFlag, tickStep, waitLabel
+    allAway()
+    skipAllFlag = True
+    tickStep = 0
+    waitLabel = mw.canvas.create_text(450, 300, text='Please, wait...', font='Arial 30 bold')
 
 
 if __name__ == '__main__':    
@@ -309,6 +341,8 @@ if __name__ == '__main__':
     mw.buttons['pause'].configure(command=pause)
     mw.buttons['stop'].configure(command=finish)
     mw.buttons['skipday'].configure(command=skipDay)
+    mw.buttons['skiphour'].configure(command=skipHour)
+    mw.buttons['skipall'].configure(command=skipAll)
     mw.labels['day']['text'] = mw.bm.getNameDayOfWeek()
     mw.labels['time']['text'] = "%s:%s" % mw.bm.getCurrentTime()
     mw.labels['stat'].after_idle(updateStat)

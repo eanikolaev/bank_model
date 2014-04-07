@@ -1,10 +1,18 @@
 class Model(object):
+    # шаг моделирования в минутах
     step = 1
-    range = 30
-    startDay = 0
-    startTime = 9
-    time = startTime*60
 
+    # период моделирования в днях
+    range = 30
+
+    # начальный день недели
+    startDay = 0
+
+    # час начала моделирования
+    startTime = 9
+
+    # текущее время в минутах
+    time = startTime*60
 
     def nextStep(self):
         self.time += self.step
@@ -38,6 +46,10 @@ class Model(object):
 
     def getNameDayOfWeek(self):
         return self.getDayName(self.getDayOfWeek())
+
+
+    def getDaysBeforeFinish(self):
+        return (self.range - self.getDaysElapsed() - self.startDay)
 
 
     def finished(self):

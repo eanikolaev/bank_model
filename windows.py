@@ -33,17 +33,21 @@ class MainWindow(object):
             'stop': Button(self.root, text = 'Stop', state=DISABLED),
             'parameters': Button(self.root, text='Parameters', command=self.popupParameters),
             'exit': Button(self.root, text = 'Exit', command=self.root.destroy),
+            'skiphour': Button(self.root, text = 'Skip hour'),
             'skipday': Button(self.root, text = 'Skip day'),
+            'skipall': Button(self.root, text = 'Skip all'),
             'schedule': Button(self.root, text = 'Schedule', command=self.popupSchedule)
         }
 
         self.buttons['schedule'].grid(row=1, column=1)
 	self.buttons['parameters'].grid(row=1, column=2)
         self.buttons['exit'].grid(row=1, column=3)
-        self.buttons['skipday'].grid(row=3, column=4)
-        self.buttons['start'].grid(row=3, column=6)
-        self.buttons['pause'].grid(row=3, column=7)
-        self.buttons['stop'].grid(row=3, column=8)
+        self.buttons['skipday'].grid(row=3, column=5)
+        self.buttons['skiphour'].grid(row=3, column=4)
+        self.buttons['skipall'].grid(row=3, column=6)
+        self.buttons['start'].grid(row=3, column=8)
+        self.buttons['pause'].grid(row=3, column=9)
+        self.buttons['stop'].grid(row=3, column=10)
 
 
     def drawLabels(self):
@@ -53,21 +57,21 @@ class MainWindow(object):
             'stat': Label(self.root, text='', width=30, font='Arial 16 bold')
         }
 
-        self.labels['time'].grid(row=1, column=5, columnspan=1)
-        self.labels['day'].grid(row=1, column=4, columnspan=1)
+        self.labels['time'].grid(row=1, column=7, columnspan=1)
+        self.labels['day'].grid(row=1, column=4, columnspan=3)
         self.labels['stat'].grid(row=2, column=1, columnspan=3)
  
 
     def drawCanvas(self):
         self.canvas = Canvas(self.root, width=1000, height=700)
-        self.canvas.grid(row=2, column=4, columnspan=5)
+        self.canvas.grid(row=2, column=4, columnspan=7)
         self.canvas.create_rectangle(0, 0, 999, 699, fill="lemon chiffon")
 
 
     def drawSlider(self):
-        self.slider = Scale(self.root, orient=HORIZONTAL, from_=0.1, to=10, resolution=0.1, label='Change speed', length=350, tickinterval=0)
+        self.slider = Scale(self.root, orient=HORIZONTAL, from_=0.1, to=10, resolution=0.1, label='Change speed', tickinterval=0, length=350)
         self.slider.set(1)
-        self.slider.grid(row=3, column=5)
+        self.slider.grid(row=3, column=7)
 
 
     def drawClerks(self):
@@ -89,7 +93,7 @@ class MainWindow(object):
         elif clerk.status == 'dinner':
 	    self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="yellow"))
         else:
-	    self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="steel blue"))
+	    self.clerks.append(self.canvas.create_rectangle(pos-20, up, pos+20, down, fill="black"))
         
         if clerk.application:
             for c in self.drawClient(clerk.application.num, pos, down+25, 20, 20):
@@ -107,7 +111,7 @@ class MainWindow(object):
 
     def drawClient(self, i, x, y, sizex, sizey):
         res = []
-        res.append(self.canvas.create_rectangle(x, y, x+sizex, y+sizey, fill='tomato'))
+        res.append(self.canvas.create_rectangle(x, y, x+sizex, y+sizey, fill='steel blue'))
         res.append(self.canvas.create_text(x, y+sizey+10, text=str(i)))
         return res
 

@@ -1,8 +1,8 @@
 class Queue(object):
     def __init__(self, maxLen=15, threshold=7):
-        self.apps = []
-        self.maxLen = maxLen
-        self.threshold = threshold
+        self.apps = []             # список заявок
+        self.maxLen = maxLen       # максимальная длина очереди
+        self.threshold = threshold # порог очереди (клиенты начинают уходить)
 
 
     def push(self, x):

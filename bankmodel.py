@@ -7,14 +7,14 @@ from application import Application
 
 class BankModel(Model):
     def __init__(self,
-                 arrivalRange=[0,7],
-                 processingRange=[0,25],
-                 clerkCount=5,
-                 schedule=None,
-                 dinnerRange=[12,15],
-                 dinnerLen=30,
-                 costRange=[50, 3000],
-                 closeBeforeTime=20
+                 arrivalRange=[0,7],     # интервал прихода заявок
+                 processingRange=[0,25], # интервал обработки заявки
+                 clerkCount=7,           # число клерков
+                 schedule=None,          # расписание
+                 dinnerRange=[12,15],    # интервал обеденного перерыва
+                 dinnerLen=30,           # продолжительность обеда клерка
+                 costRange=[50, 3000],   # интервал стоимости обработки заявки
+                 closeBeforeTime=30      # время закрытия двери банка
     ):
         self.dinnerRange = dinnerRange
         self.dinnerLen = dinnerLen
@@ -25,9 +25,11 @@ class BankModel(Model):
         self.costRange = costRange
         self.queue = Queue()
 
+        # генерация расписания (если оно не задано в параметре)
         if schedule == None:
             self.schedule = self.getDefaultSchedule()
         
+        # генерация клерков
         startDinnerTime = self.dinnerRange[0] * 60
         finishDinnerTime = (self.dinnerRange[1] * 60) - self.dinnerLen
         dinnerStep = (finishDinnerTime - startDinnerTime) / self.clerkCount
@@ -37,7 +39,6 @@ class BankModel(Model):
             c = Clerk(i+1, dinnerTime, level=int(uniform(0,self.clerkCount)))            
             clerks.append(c)
             dinnerTime += dinnerStep
-
         self.clerks = clerks
 
 
@@ -61,10 +62,10 @@ class BankModel(Model):
 
 
     def getNextAppArrivalTime(self):
-        day = self.getDayOfWeek() + 1
+        day = self.getDayOfWeek()
         hour = int(self.getCurrentTime()[0])
         end = int(self.schedule[day]['workRange'][1])
-        k = 5 / (9 *(hour/float(end) + day/18.0))
+        k = 5 / (9 *(hour/float(end) + (day+1)/18.0))
         l = self.arrivalRange[0]
         r = int(k*self.arrivalRange[1])
         if r < l: r = l+1
